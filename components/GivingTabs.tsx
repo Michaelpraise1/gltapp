@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 const tabs = [
   { id: 'offering', label: 'Offering', icon: 'hand-heart-outline' },
   { id: 'tithe', label: 'Tithe', icon: 'package-variant-closed' },
-  { id: 'rent', label: 'Rent', icon: 'office-building' }
+  { id: 'project', label: 'Project', icon: 'office-building' }
 ];
 
-export const GivingTabs = ({ 
-  activeTab, 
-  onSelectTab 
-}: { 
-  activeTab: string, 
-  onSelectTab: (id: string) => void 
+export const GivingTabs = ({
+  activeTab,
+  onSelectTab
+}: {
+  activeTab: string,
+  onSelectTab: (id: string) => void
 }) => {
   return (
     <View className="px-6 py-4">
@@ -21,15 +21,15 @@ export const GivingTabs = ({
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={tab.id}
               onPress={() => onSelectTab(tab.id)}
               className={`flex-1 flex-row items-center justify-center py-3 rounded-full ${isActive ? 'bg-brand-green' : ''}`}
             >
-              <MaterialCommunityIcons 
-                name={tab.icon as any} 
-                size={18} 
-                color={isActive ? "white" : "#9BA1A6"} 
+              <MaterialCommunityIcons
+                name={tab.icon as any}
+                size={18}
+                color={isActive ? "white" : "#9BA1A6"}
               />
               <Text className={`ml-2 text-sm font-bold ${isActive ? 'text-white' : 'text-[#9BA1A6]'}`}>
                 {tab.label}

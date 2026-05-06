@@ -43,9 +43,9 @@ export default function GivingScreen() {
           />
         )}
 
-        {activeTab === 'rent' && (
+        {activeTab === 'project' && (
           <BankCard 
-             category="Rent"
+             category="Project"
              bankName="Access Bank"
              accountNo="1909666384"
              accountName="GODS LOVE TABERNACLE"

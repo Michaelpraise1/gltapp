@@ -33,7 +33,7 @@ export default function MediaScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pl-6 mb-8">
           <View className="w-80 mr-4">
             <MediaCard
-              title="Jesus - The Son Of Man"
+              title="Grace Unveiled"
               speaker="Pastor Atoyebi"
               duration="01:08:30"
               thumbnail="https://images.unsplash.com/photo-1544427928-c49cd1bd4416?auto=format&fit=crop&q=80"
@@ -41,7 +41,7 @@ export default function MediaScreen() {
           </View>
           <View className="w-80 mr-4">
             <MediaCard
-              title="The Power of Grace"
+              title="Increasing in Grace"
               speaker="Pastor Atoyebi"
               duration="55:20"
               thumbnail="https://images.unsplash.com/photo-1501139083538-0139583c060f?auto=format&fit=crop&q=80"
