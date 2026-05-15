@@ -1,17 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const auth = require('../middleware/auth');
 const Attendance = require('../models/Attendance');
-const User = require('../models/User');
 
-// @route   POST /api/attendance/check-in
 // @desc    Start attendance session via geofence
+// @route   POST /api/attendance/check-in
 // @access  Private
-router.post('/check-in', auth, async (req, res) => {
+const checkIn = async (req, res) => {
   const { branchId, serviceType } = req.body;
 
   try {
-    // Check if user already has a session today for this branch
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -23,7 +18,7 @@ router.post('/check-in', auth, async (req, res) => {
 
     if (attendance) {
       if (attendance.status === 'checked-in') {
-        return res.json(attendance); // Already checked in
+        return res.json(attendance);
       }
       attendance.status = 'checked-in';
       attendance.checkInTime = new Date();
@@ -43,12 +38,12 @@ router.post('/check-in', auth, async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-// @route   POST /api/attendance/check-out
 // @desc    End attendance session via geofence
+// @route   POST /api/attendance/check-out
 // @access  Private
-router.post('/check-out', auth, async (req, res) => {
+const checkOut = async (req, res) => {
   const { branchId } = req.body;
 
   try {
@@ -72,7 +67,7 @@ router.post('/check-out', auth, async (req, res) => {
 
     attendance.checkOutTime = checkOutTime;
     attendance.duration = (attendance.duration || 0) + durationMinutes;
-    attendance.status = 'present'; // Session completed
+    attendance.status = 'present';
 
     await attendance.save();
     res.json(attendance);
@@ -80,17 +75,17 @@ router.post('/check-out', auth, async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-// @route   POST /api/attendance
 // @desc    Manual attendance mark
+// @route   POST /api/attendance
 // @access  Private
-router.post('/', auth, async (req, res) => {
+const markAttendance = async (req, res) => {
   const { branch, status, serviceType, userId } = req.body;
 
   try {
     const newAttendance = new Attendance({
-      user: userId || req.user.id, 
+      user: userId || req.user.id,
       branch,
       status,
       serviceType
@@ -102,30 +97,25 @@ router.post('/', auth, async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-// @route   GET /api/attendance/user/:userId
 // @desc    Get attendance history for a user
+// @route   GET /api/attendance/user/:userId
 // @access  Private
-router.get('/user/:userId', auth, async (req, res) => {
+const getUserAttendance = async (req, res) => {
   try {
-    // Users can only see their own attendance unless admin/steward (check role logic later if needed)
-    if (req.user.id !== req.params.userId) {
-      // Ideally check for admin role here
-    }
-
     const attendance = await Attendance.find({ user: req.params.userId }).sort({ date: -1 });
     res.json(attendance);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-// @route   GET /api/attendance/branch/:branchId
 // @desc    Get attendance stats for a branch
+// @route   GET /api/attendance/branch/:branchId
 // @access  Private (Admin/Steward)
-router.get('/branch/:branchId', auth, async (req, res) => {
+const getBranchAttendance = async (req, res) => {
   try {
     const attendance = await Attendance.find({ branch: req.params.branchId }).populate('user', ['fullName', 'email']);
     res.json(attendance);
@@ -133,6 +123,12 @@ router.get('/branch/:branchId', auth, async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-module.exports = router;
+module.exports = {
+  checkIn,
+  checkOut,
+  markAttendance,
+  getUserAttendance,
+  getBranchAttendance
+};

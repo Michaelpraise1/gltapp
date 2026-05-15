@@ -1,16 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const auth = require('../middleware/auth');
 const Testimony = require('../models/Testimony');
 const Event = require('../models/Event');
 const Account = require('../models/Account');
 
 // --- TESTIMONIES ---
 
-// @route   POST /api/content/testimony
 // @desc    Submit a testimony
+// @route   POST /api/content/testimony
 // @access  Private
-router.post('/testimony', auth, async (req, res) => {
+const submitTestimony = async (req, res) => {
   try {
     const { title, content, branch } = req.body;
     const newTestimony = new Testimony({
@@ -20,34 +17,33 @@ router.post('/testimony', auth, async (req, res) => {
       branch
     });
     const testimony = await newTestimony.save();
-    res.json(testimony);
+    res.status(201).json(testimony);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-// @route   GET /api/content/testimonies/:branchId
 // @desc    Get testimonies for a branch
-// @access  Public (or Private)
-router.get('/testimonies/:branchId', async (req, res) => {
+// @route   GET /api/content/testimonies/:branchId
+// @access  Public
+const getTestimonies = async (req, res) => {
   try {
-    const testimonies = await Testimony.find({ branch: req.params.branchId, isApproved: true }) // Only approved
+    const testimonies = await Testimony.find({ branch: req.params.branchId, isApproved: true })
       .sort({ date: -1 });
     res.json(testimonies);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
-
+};
 
 // --- EVENTS ---
 
-// @route   GET /api/content/events
 // @desc    Get all events
+// @route   GET /api/content/events
 // @access  Public
-router.get('/events', async (req, res) => {
+const getEvents = async (req, res) => {
   try {
     const events = await Event.find().sort({ date: 1 });
     res.json(events);
@@ -55,32 +51,31 @@ router.get('/events', async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
+// @desc    Create an event
 // @route   POST /api/content/events
-// @desc    Create an event (Admin only ideally)
-// @access  Private 
-router.post('/events', auth, async (req, res) => {
+// @access  Private (Admin)
+const createEvent = async (req, res) => {
   try {
     const { title, description, date, branch, type } = req.body;
     const newEvent = new Event({
       title, description, date, branch, type
     });
     const event = await newEvent.save();
-    res.json(event);
+    res.status(201).json(event);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
-
+};
 
 // --- ACCOUNTS ---
 
+// @desc    Get account details for a branch
 // @route   GET /api/content/accounts/:branchId
-// @desc    Get distinct account details for a branch
 // @access  Public
-router.get('/accounts/:branchId', async (req, res) => {
+const getAccounts = async (req, res) => {
   try {
     const accounts = await Account.find({ branch: req.params.branchId });
     res.json(accounts);
@@ -88,23 +83,30 @@ router.get('/accounts/:branchId', async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-// @route   POST /api/content/accounts
 // @desc    Add account details
+// @route   POST /api/content/accounts
 // @access  Private
-router.post('/accounts', auth, async (req, res) => {
+const addAccount = async (req, res) => {
   try {
     const { bankName, accountNumber, accountName, branch, type } = req.body;
     const newAccount = new Account({
       bankName, accountNumber, accountName, branch, type
     });
     const account = await newAccount.save();
-    res.json(account);
+    res.status(201).json(account);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-module.exports = router;
+module.exports = {
+  submitTestimony,
+  getTestimonies,
+  getEvents,
+  createEvent,
+  getAccounts,
+  addAccount
+};

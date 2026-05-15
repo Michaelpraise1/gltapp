@@ -1,13 +1,11 @@
-const express = require('express');
-const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// @route   POST /api/auth/register
 // @desc    Register a new user
+// @route   POST /api/auth/register
 // @access  Public
-router.post('/register', async (req, res) => {
+const registerUser = async (req, res) => {
   const { fullName, email, password, role, branch } = req.body;
 
   try {
@@ -38,22 +36,22 @@ router.post('/register', async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: 360000 }, // long expiration for dev
+      { expiresIn: '30d' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token });
+        res.status(201).json({ token });
       }
     );
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-// @route   POST /api/auth/login
 // @desc    Authenticate user & get token
+// @route   POST /api/auth/login
 // @access  Public
-router.post('/login', async (req, res) => {
+const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -76,16 +74,27 @@ router.post('/login', async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: 360000 },
+      { expiresIn: '30d' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, user: { id: user.id, fullName: user.fullName, role: user.role, branch: user.branch } });
+        res.json({ 
+          token, 
+          user: { 
+            id: user.id, 
+            fullName: user.fullName, 
+            role: user.role, 
+            branch: user.branch 
+          } 
+        });
       }
     );
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
+};
 
-module.exports = router;
+module.exports = {
+  registerUser,
+  loginUser
+};
