@@ -1,32 +1,23 @@
-import { useAuth } from '@/context/AuthContext';
-import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('member');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
 
-  const handleRegister = async () => {
+  const handleRegister = () => {
     if (!fullName || !email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    setLoading(true);
-    try {
-      await register(fullName, email, password, role);
-      router.replace('/(tabs)');
-    } catch (error: any) {
-      Alert.alert('Registration Failed', error.message);
-    } finally {
-      setLoading(false);
-    }
+    router.push({
+      pathname: '/auth/chBranch' as any,
+      params: { fullName, email, password }
+    });
   };
 
   return (
@@ -59,28 +50,11 @@ export default function RegisterScreen() {
           secureTextEntry
         />
 
-        <View style={styles.pickerContainer}>
-          <Text style={styles.label}>Role:</Text>
-          <Picker
-            selectedValue={role}
-            onValueChange={(itemValue) => setRole(itemValue)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Member" value="member" />
-            <Picker.Item label="Steward" value="steward" />
-          </Picker>
-        </View>
-
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={styles.button}
           onPress={handleRegister}
-          disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Register</Text>
-          )}
+          <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => router.back()}>
