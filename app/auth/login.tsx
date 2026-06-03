@@ -1,7 +1,21 @@
 import { useAuth } from '@/context/AuthContext';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -20,114 +34,100 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      Alert.alert('Login Failed', error.message || 'Invalid Credentials');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>GLT Church App</Text>
-        <Text style={styles.subtitle}>Welcome Back</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
+    <ImageBackground
+      source={require('@/assets/images/worship_bg.png')}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <View className="flex-1 bg-black/60">
+        <StatusBar barStyle="light-content" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+            showsVerticalScrollIndicator={false}
+            className="px-6 py-8"
+          >
+            <View className="w-full max-w-md mx-auto bg-[#151719]/95 border border-white/10 rounded-[32px] p-6 shadow-2xl shadow-black/80">
+              
+              {/* Logo / Header */}
+              <View className="items-center mb-8">
+                <Image
+                  source={require('@/assets/images/glt_logo.png')}
+                  className="w-20 h-20 mb-4"
+                  resizeMode="contain"
+                />
+                <Text className="text-white text-2xl font-bold text-center tracking-tight">God's Love Tabernacle</Text>
+                <Text className="text-white/40 text-xs mt-1 text-center font-bold tracking-widest uppercase">Welcome Back</Text>
+              </View>
 
-        <TouchableOpacity onPress={() => router.push('/auth/register' as any)}>
-          <Text style={styles.linkText}>Don't have an account? Register</Text>
-        </TouchableOpacity>
+              {/* Email Input */}
+              <View className="mb-4">
+                <Text className="text-white/80 text-xs font-semibold mb-2">Email Address</Text>
+                <View className="flex-row items-center bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                  <Ionicons name="mail-outline" size={20} color="#9BA1A6" style={{ marginRight: 12 }} />
+                  <TextInput
+                    className="flex-1 text-white text-sm"
+                    placeholder="Enter email"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View className="mb-6">
+                <Text className="text-white/80 text-xs font-semibold mb-2">Password</Text>
+                <View className="flex-row items-center bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                  <Ionicons name="lock-closed-outline" size={20} color="#9BA1A6" style={{ marginRight: 12 }} />
+                  <TextInput
+                    className="flex-1 text-white text-sm"
+                    placeholder="Enter password"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+
+              {/* Login Button */}
+              <TouchableOpacity
+                onPress={handleLogin}
+                disabled={loading}
+                className={`w-full py-4 rounded-2xl items-center justify-center mb-6 ${
+                  loading ? 'bg-brand-green/50' : 'bg-brand-green'
+                }`}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white font-bold text-sm">Login</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Navigation Link */}
+              <TouchableOpacity onPress={() => router.push('/auth/register' as any)}>
+                <Text className="text-brand-lightGreen text-center text-xs font-semibold">
+                  Don't have an account? Register
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
-    </View>
+    </ImageBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 20,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkText: {
-    color: '#007AFF',
-    textAlign: 'center',
-    fontSize: 14,
-  },
-});

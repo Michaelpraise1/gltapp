@@ -4,7 +4,7 @@ import axios from 'axios';
 // Update this to your computer's IP address when testing on a physical device
 // For emulator, use localhost
 // Your current IP: 192.168.0.130
-const API_URL = 'http://192.168.0.130:3000/api';
+const API_URL = 'https://gltbackend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -68,6 +68,28 @@ export const contentAPI = {
     api.get(`/content/accounts/${branchId}`),
   addAccount: (data: { bankName: string; accountNumber: string; accountName: string; branch: string; type: string }) =>
     api.post('/content/accounts', data),
+};
+
+// Branch APIs
+export const branchAPI = {
+  getBranches: () =>
+    api.get('/branches'),
+};
+
+// Verification APIs
+export const verificationAPI = {
+  upload: (formData: FormData) =>
+    api.post('/verification/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  getPending: () =>
+    api.get('/verification/pending'),
+  approve: (id: string, notes?: string) =>
+    api.post(`/verification/${id}/approve`, { notes }),
+  reject: (id: string, notes?: string) =>
+    api.post(`/verification/${id}/reject`, { notes }),
 };
 
 export default api;

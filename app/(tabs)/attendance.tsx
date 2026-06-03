@@ -3,7 +3,7 @@ import { ScrollView, View, Text, TouchableOpacity, StatusBar, Switch, Alert, Act
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { AttendanceService } from '@/services/AttendanceService';
-import { attendanceAPI } from '@/services/api';
+import { attendanceAPI, branchAPI } from '@/services/api';
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
@@ -75,12 +75,15 @@ export default function AttendanceScreen() {
   const toggleAutoAttendance = async (value: boolean) => {
     if (value) {
       try {
-        // In a real scenario, you'd fetch branches from the API first
-        // For now, we use a placeholder branch if the coordinates were found
+        // Fetch branches from the API to get actual coordinates
+        const response = await branchAPI.getBranches();
+        const branches = response.data;
+        const matchingBranch = branches.find((b: any) => b._id === user?.branch);
+
         const branchCoordinates = {
           _id: user?.branch || 'ibadan-branch-id',
-          latitude: 7.3775, // Placeholder for Ibadan
-          longitude: 3.9470,
+          latitude: matchingBranch?.latitude || 7.3775, // Backend or default
+          longitude: matchingBranch?.longitude || 3.9470, // Backend or default
           geofenceRadius: 200
         };
 

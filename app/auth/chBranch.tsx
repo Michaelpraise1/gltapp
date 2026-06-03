@@ -3,19 +3,19 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from "@react-native-picker/picker";
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, router } from 'expo-router';
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { branchAPI, verificationAPI } from '@/services/api';
 
-const chBranch = () => {
+const ChBranch = () => {
   const { register } = useAuth();
   const params = useLocalSearchParams();
 
@@ -24,11 +24,31 @@ const chBranch = () => {
   const email = (params?.email as string) || '';
   const password = (params?.password as string) || '';
 
-  const [selectedBranch, setSelectedBranch] = useState('lekki');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [branches, setBranches] = useState<any[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(true);
   const [isSteward, setIsSteward] = useState<boolean | null>(null);
   const [certificate, setCertificate] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await branchAPI.getBranches();
+        setBranches(response.data);
+        if (response.data && response.data.length > 0) {
+          setSelectedBranch(response.data[0]._id);
+        }
+      } catch (err) {
+        console.error('Error fetching branches:', err);
+        Alert.alert('Error', 'Failed to load branches from the server.');
+      } finally {
+        setBranchesLoading(false);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   // Function to handle certificate file selection
   const handleSelectDocument = async () => {
@@ -40,13 +60,8 @@ const chBranch = () => {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
-        setUploading(true);
-        // Simulate file upload progress/state for frontend representation
-        setTimeout(() => {
-          setCertificate(file);
-          setUploading(false);
-          Alert.alert('Success', 'Certificate uploaded successfully!');
-        }, 1200);
+        setCertificate(file);
+        Alert.alert('Success', 'Certificate selected!');
       }
     } catch (error) {
       console.error('Error selecting document:', error);
@@ -77,12 +92,27 @@ const chBranch = () => {
       // Call register action from AuthContext
       await register(fullName, email, password, finalRole, selectedBranch);
       
+      // If user is a steward, now upload the certificate
+      if (isSteward && certificate) {
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('document', {
+          uri: certificate.uri,
+          name: certificate.name || 'certificate.pdf',
+          type: certificate.mimeType || 'application/pdf',
+        } as any);
+        
+        await verificationAPI.upload(formData);
+      }
+      
       Alert.alert('Success', 'Registration completed successfully!');
       router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message || 'Something went wrong');
+      console.error('Registration/Upload failed:', error);
+      Alert.alert('Registration Failed', error.response?.data?.msg || error.message || 'Something went wrong');
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -108,35 +138,21 @@ const chBranch = () => {
           {/* Branch Picker */}
           <View className="mb-6">
             <Text className="text-white/80 text-sm font-semibold mb-2">Choose Your Branch</Text>
-            <View className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-              <Picker
-                selectedValue={selectedBranch}
-                onValueChange={(itemValue) => setSelectedBranch(itemValue)}
-                dropdownIconColor="white"
-                style={{ color: 'white', height: 50 }}
-              >
-                <Picker.Item label="GLT Lekki (Light House)" value="lekki" />
-                <Picker.Item label="GLT Ile-Ife" value="ile-ife" />
-                <Picker.Item label="GLT Akure" value="akure" />
-                <Picker.Item label="GLT Osogbo" value="osogbo" />
-                <Picker.Item label="GLT Ilesa" value="ilesa" />
-                <Picker.Item label="GLT Agricola" value="agricola" />
-                <Picker.Item label="GLT Challenge" value="challenge" />
-                <Picker.Item label="GLT Houston" value="houston" />
-                <Picker.Item label="GLT Ondo" value="ondo" />
-                <Picker.Item label="Glt Ogbomoso" value="ogbomoso" />
-                <Picker.Item label="GLT Abuja" value="abuja" />
-                <Picker.Item label="GLT Accra" value="accra" />
-                <Picker.Item label="GLT Enugu" value="enugu" />
-                <Picker.Item label="GLT Bayelsa" value="bayelsa" />
-                <Picker.Item label="GLT Ajah" value="ajah" />
-                <Picker.Item label="GLT Isolo" value="isolo" />
-                <Picker.Item label="GLT Egbeda" value="egbeda" />
-                <Picker.Item label="GLT Dallas" value="dallas" />
-                <Picker.Item label="GLT Birmingham" value="birmingham" />
-                <Picker.Item label="GLT PhaseII OAUTHC" value="oauthc" />
-                <Picker.Item label="GLT Gwagwalada" value="gwagwalada" />
-              </Picker>
+            <View className="bg-white/5 border border-white/10 rounded-xl overflow-hidden justify-center" style={{ height: 50 }}>
+              {branchesLoading ? (
+                <ActivityIndicator size="small" color="#116B3C" />
+              ) : (
+                <Picker
+                  selectedValue={selectedBranch}
+                  onValueChange={(itemValue) => setSelectedBranch(itemValue)}
+                  dropdownIconColor="white"
+                  style={{ color: 'white', height: 50 }}
+                >
+                  {branches.map((branch) => (
+                    <Picker.Item key={branch._id} label={branch.name} value={branch._id} />
+                  ))}
+                </Picker>
+              )}
             </View>
           </View>
 
@@ -265,4 +281,4 @@ const chBranch = () => {
   );
 };
 
-export default chBranch;
+export default ChBranch;
