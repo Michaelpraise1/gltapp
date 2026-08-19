@@ -1,12 +1,70 @@
-import React from 'react';
-import { ScrollView, View, Text, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, Text, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { GivingTabs } from '@/components/GivingTabs';
 import { BankCard } from '@/components/BankCard';
 import { ProjectCard } from '@/components/ProjectCard';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '@/context/AuthContext';
+import { contentAPI, branchAPI } from '@/services/api';
+import { Picker } from "@react-native-picker/picker";
 
 export default function GivingScreen() {
-  const [activeTab, setActiveTab] = React.useState('offering');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('offering');
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  // Load branches on mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const branchRes = await branchAPI.getBranches();
+        const branchList = branchRes.data || [];
+        setBranches(branchList);
+
+        if (user?.branch) {
+          setSelectedBranchId(user.branch);
+        } else if (branchList.length > 0) {
+          setSelectedBranchId(branchList[0]._id);
+        }
+      } catch (error) {
+        console.error('Error loading branches in Giving:', error);
+      }
+    };
+    loadInitialData();
+  }, [user?.branch]);
+
+  // Load accounts when selected branch changes
+  useEffect(() => {
+    if (!selectedBranchId) return;
+
+    const fetchAccounts = async () => {
+      setLoading(true);
+      try {
+        const response = await contentAPI.getAccounts(selectedBranchId);
+        setAccounts(response.data || []);
+      } catch (error) {
+        console.error('Error loading accounts:', error);
+        Alert.alert('Error', 'Failed to load bank accounts for the selected branch.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAccounts();
+  }, [selectedBranchId]);
+
+  // Filter accounts by type mapping to activeTab
+  const getFilteredAccounts = () => {
+    const typeMap: Record<string, string> = {
+      offering: 'Offering',
+      tithe: 'Tithe',
+      project: 'Project',
+    };
+    const targetType = typeMap[activeTab];
+    return accounts.filter((acc) => acc.type === targetType);
+  };
 
   return (
     <View className="flex-1 bg-brand-dark">
@@ -15,42 +73,50 @@ export default function GivingScreen() {
         className="flex-1" 
         showsVerticalScrollIndicator={false}
       >
-        <View className="px-6 pt-14 pb-4">
+        <View className="px-6 pt-14 pb-4 flex-row items-center justify-between">
           <Text className="text-white text-3xl font-bold">Giving</Text>
+          {branches.length > 1 && (
+            <View className="bg-brand-card border border-white/5 rounded-full overflow-hidden justify-center" style={{ height: 36, width: 140 }}>
+              <Picker
+                selectedValue={selectedBranchId}
+                onValueChange={(val) => setSelectedBranchId(val)}
+                dropdownIconColor="white"
+                style={{ color: 'white', fontSize: 12, height: 36, backgroundColor: 'transparent' }}
+              >
+                {branches.map((branch) => (
+                  <Picker.Item key={branch._id} label={branch.name} value={branch._id} style={{ fontSize: 12 }} />
+                ))}
+              </Picker>
+            </View>
+          )}
         </View>
 
         {/* Giving Type Tabs */}
         <GivingTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 
         {/* Bank Detail Cards */}
-        {activeTab === 'offering' && (
-          <BankCard 
-             category="Offering"
-             bankName="Stanbic IBTC Bank"
-             accountNo="0067015990"
-             accountName="GODS LOVE TABERNACLE"
-             color="#116B3C"
-          />
-        )}
-
-        {activeTab === 'tithe' && (
-          <BankCard 
-             category="Tithe"
-             bankName="Fidelity Bank"
-             accountNo="5540044696"
-             accountName="GODS LOVE TABERNACLE"
-             color="#116B3C"
-          />
-        )}
-
-        {activeTab === 'project' && (
-          <BankCard 
-             category="Project"
-             bankName="Access Bank"
-             accountNo="1909666384"
-             accountName="GODS LOVE TABERNACLE"
-             color="#116B3C"
-          />
+        {loading ? (
+          <View className="py-12 items-center justify-center">
+            <ActivityIndicator size="large" color="#116B3C" />
+            <Text className="text-white/40 text-xs mt-2 font-medium">Fetching accounts...</Text>
+          </View>
+        ) : getFilteredAccounts().length > 0 ? (
+          getFilteredAccounts().map((acc, index) => (
+            <BankCard 
+               key={acc._id || index}
+               category={acc.type}
+               bankName={acc.bankName}
+               accountNo={acc.accountNumber}
+               accountName={acc.accountName}
+               color="#116B3C"
+            />
+          ))
+        ) : (
+          <View className="mx-6 mb-6 p-6 bg-brand-card/30 rounded-[28px] border border-white/5 items-center justify-center">
+            <Ionicons name="information-circle-outline" size={32} color="#9BA1A6" />
+            <Text className="text-white/60 text-center text-sm font-semibold mt-2">No bank details found</Text>
+            <Text className="text-white/30 text-center text-xs mt-1">No account details have been configured for this category under the selected branch.</Text>
+          </View>
         )}
 
         {/* Online Giving Placeholder */}

@@ -10,6 +10,15 @@ interface User {
   branch: string;
 }
 
+// Normalize backend user object (handles _id vs id, missing fields, etc.)
+const normalizeUser = (raw: any): User => ({
+  id: raw.id || raw._id || '',
+  fullName: raw.fullName || raw.name || '',
+  email: raw.email || '',
+  role: raw.role || 'member',
+  branch: raw.branch || '',
+});
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -38,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (storedToken && storedUser) {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        setUser(normalizeUser(JSON.parse(storedUser)));
       }
     } catch (error) {
       console.error('Error loading user:', error);
@@ -50,7 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       const response = await authAPI.login({ email, password });
-      const { token: newToken, user: newUser } = response.data;
+      const { token: newToken, user: rawUser } = response.data;
+
+      const newUser = normalizeUser({ ...rawUser, email: rawUser?.email || email });
 
       await AsyncStorage.setItem('token', newToken);
       await AsyncStorage.setItem('user', JSON.stringify(newUser));

@@ -68,6 +68,10 @@ export const contentAPI = {
     api.get(`/content/accounts/${branchId}`),
   addAccount: (data: { bankName: string; accountNumber: string; accountName: string; branch: string; type: string }) =>
     api.post('/content/accounts', data),
+
+  // Sermons
+  getSermons: (branchId: string) =>
+    api.get(`/content/sermons/${branchId}`),
 };
 
 // Branch APIs

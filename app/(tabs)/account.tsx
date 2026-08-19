@@ -2,11 +2,17 @@ import { ProfileHeader } from '@/components/ProfileHeader';
 import { SettingItem } from '@/components/SettingItem';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import React from 'react';
+import { useRouter } from 'expo-router';
 import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 
 export default function AccountScreen() {
   const { logout } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await logout();
+    router.replace('/auth/login');
+  };
 
   return (
     <View className="flex-1 bg-brand-dark">
@@ -76,8 +82,8 @@ export default function AccountScreen() {
           <SettingItem
             icon={<Ionicons name="happy" size={20} color="white" />}
             iconColor="#6366f1"
-            label="Feature Request"
-            isExternal={true}
+            label="Become A Steward"
+            onPress={() => router.push('/become-steward' as any)}
           />
           <SettingItem
             icon={<Ionicons name="chatbox-ellipses" size={20} color="white" />}
@@ -124,7 +130,7 @@ export default function AccountScreen() {
             iconColor="#EE3B3B"
             label="Sign Out"
             showArrow={false}
-            onPress={logout}
+            onPress={handleSignOut}
             isRed={true}
           />
         </View>

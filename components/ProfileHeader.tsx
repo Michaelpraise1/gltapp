@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { branchAPI } from '@/services/api';
+import * as DocumentPicker from 'expo-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const ProfileHeader = () => {
   const { user } = useAuth();
   const [branchName, setBranchName] = useState('Loading...');
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBranchName = async () => {
@@ -30,6 +33,19 @@ export const ProfileHeader = () => {
     };
     fetchBranchName();
   }, [user?.branch]);
+
+  // Load saved profile image on mount
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      try {
+        const savedUri = await AsyncStorage.getItem(`profile_image_${user?.id}`);
+        if (savedUri) setProfileImageUri(savedUri);
+      } catch (error) {
+        console.error('Error loading profile image:', error);
+      }
+    };
+    if (user?.id) loadProfileImage();
+  }, [user?.id]);
   
   // Get initials from name
   const getInitials = (name: string) => {
@@ -37,17 +53,46 @@ export const ProfileHeader = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
+  const pickImage = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setProfileImageUri(uri);
+        if (user?.id) {
+          await AsyncStorage.setItem(`profile_image_${user?.id}`, uri);
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+    }
+  };
+
   return (
     <View className="px-6 py-6 flex-row items-center border-b border-white/5">
       {/* Avatar */}
-      <View className="w-20 h-20 bg-brand-red rounded-full items-center justify-center shadow-lg shadow-brand-red/40">
-        <Text className="text-white text-3xl font-bold">{getInitials(user?.fullName || 'User')}</Text>
-      </View>
+      <TouchableOpacity 
+        onPress={pickImage}
+        className="w-20 h-20 bg-brand-red rounded-full items-center justify-center shadow-lg shadow-brand-red/40 overflow-hidden relative"
+      >
+        {profileImageUri ? (
+          <Image source={{ uri: profileImageUri }} style={{ width: 80, height: 80 }} />
+        ) : (
+          <Text className="text-white text-3xl font-bold">{getInitials(user?.fullName || 'User')}</Text>
+        )}
+        <View className="absolute bottom-0 w-full bg-black/40 py-1 items-center">
+          <Text className="text-white text-[8px] font-bold">EDIT</Text>
+        </View>
+      </TouchableOpacity>
 
       {/* Info */}
       <View className="flex-1 ml-5">
         <Text className="text-white text-xl font-bold">{user?.fullName || 'Guest User'}</Text>
-        <Text className="text-white/40 text-xs mb-1">{user?.email || 'email@example.com'}</Text>
+        <Text className="text-white/40 text-xs mb-1">{user?.email || 'No Email Found'}</Text>
         
         <View className="flex-row gap-2 mt-1 flex-wrap">
           {/* Branch Badge */}
@@ -69,8 +114,8 @@ export const ProfileHeader = () => {
       </View>
 
       {/* Edit */}
-      <TouchableOpacity className="p-2 bg-brand-card rounded-full">
-        <MaterialCommunityIcons name="pencil" size={20} color="white" />
+      <TouchableOpacity onPress={pickImage} className="p-2 bg-brand-card rounded-full">
+        <MaterialCommunityIcons name="camera" size={20} color="white" />
       </TouchableOpacity>
     </View>
   );
